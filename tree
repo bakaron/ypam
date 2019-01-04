@@ -9,420 +9,507 @@
 namespace aisdi
 {
 
-template <typename KeyType, typename ValueType>
-class TreeMap
-{
-public:
-  using key_type = KeyType;
-  using mapped_type = ValueType;
-  using value_type = std::pair<const key_type, mapped_type>;
-  using size_type = std::size_t;
-  using reference = value_type&;
-  using const_reference = const value_type&;
+    template <typename KeyType, typename ValueType>
+    class TreeMap
+    {
+    public:
+        using key_type = KeyType;
+        using mapped_type = ValueType;
+        using value_type = std::pair<const key_type, mapped_type>;
+        using size_type = std::size_t;
+        using reference = value_type&;
+        using const_reference = const value_type&;
 
-  class ConstIterator;
-  class Iterator;
-  using iterator = Iterator;
-  using const_iterator = ConstIterator;
-private:
-  struct node{
-    node * parent=nullptr;
-    node *left_child=nullptr;
-    node *right_child=nullptr;
-    value_type data;
-    node()
-    {}
-    node(value_type var):data(var)
-    {}
+        class ConstIterator;
+        class Iterator;
+        using iterator = Iterator;
+        using const_iterator = ConstIterator;
+        friend class ConstIterator;
+        friend class Iterator;
+    private:
+        struct node{
+            node * parent=nullptr;
+            node *left_child=nullptr;
+            node *right_child=nullptr;
+            value_type data;
+            node()
+            {}
+            node(value_type var):data(var)
+            {}
 
-  };
-  node *root;
-  size_type size;
-public:
+        };
+        node *root=nullptr;
+        size_type size=0;
+    public:
 
-  TreeMap()
-  {
-    root=nullptr;
-    size=0;
-  }
+        TreeMap()
+        {
+            root=nullptr;
+            size=0;
+        }
 
-  TreeMap(std::initializer_list<value_type> list)
-  {
-    for(auto l=list.begin();l!= list.end();l++){
-    //  add(*l);
-    }
-
-   (void)list; // disables "unused argument" warning, can be removed when method is implemented.
-    throw std::runtime_error("TODO");
-  }
-
-  TreeMap(const TreeMap& other)
-  {
-    *this =other
-    (void)other;
-    throw std::runtime_error("TODO");
-  }
-
-  TreeMap(TreeMap&& other)
-  {
-
-    if(*this==other)return;
-    size=other.size;
-    other.size=0;
-    root=other.root;
-    other.root=nullptr;
-    //(void)other;
-    //throw std::runtime_error("TODO");
-  }
-
-  TreeMap& operator=(const TreeMap& other)
-  {
-    (void)other;
-    throw std::runtime_error("TODO");
-  }
-
-  TreeMap& operator=(TreeMap&& other)
-  {
-    (void)other;
-    throw std::runtime_error("TODO");
-  }
-
-  bool isEmpty() const
-  {
-    return size==0?1:0;
-
-    //throw std::runtime_error("TODO");
-  }
-
-  mapped_type& operator[](const key_type& key)
-  {
-
-    (void)key;
-    throw std::runtime_error("TODO");
-  }
-
-  const mapped_type& valueOf(const key_type& key) const
-  {
-
-
-
-    (void)key;
-    throw std::runtime_error("TODO");
-  }
-  void add(const value_type & value){
-    node *helper = new node(value);
-    size+=1;
-    if(root==nullptr) root=helper;
-    else {
-      node *n=root;
-      while(n!=nullptr){
-          if(value.first >=n->data.first){
-            if(n->right_child!=nullptr){
-              n=n->right_child;
+        TreeMap(std::initializer_list<value_type> list)
+        {
+            for(auto l=list.begin();l!= list.end();l++){
+                  add(*l);
             }
-            else {
-                n->right_child=helper;
-                helper->parent=n;
-                return;
+
+            //(void)list; // disables "unused argument" warning, can be removed when method is implemented.
+            //throw std::runtime_error("TODO");
+        }
+
+        TreeMap(const TreeMap& other)
+        {
+            //*this = other;
+            if(*this==other)return;
+              clear(root);
+            for(auto it=other.begin();it!= other.end();++it){
+              add(*it);
             }
+            //(void)other;
+            //throw std::runtime_error("TODO");
+        }
+
+        TreeMap(TreeMap&& other)
+        {
+
+            if(*this==other)return;
+            size=other.size;
+            other.size=0;
+            root=other.root;
+            other.root=nullptr;
+            //(void)other;
+            //throw std::runtime_error("TODO");
+        }
+
+        TreeMap& operator=(const TreeMap& other)
+        {
+          if(*this==other)return *this;
+            clear(root);
+          for(auto it=other.begin();it!= other.end();++it){
+            add(*it);
           }
-          else{
-            if(n->left_child!=nullptr){
-              n=n->left_child;
+        //  size=other.size;
+          return *this;
+
+            //(void)other;
+            //throw std::runtime_error("TODO");
+        }
+
+        TreeMap& operator=(TreeMap&& other)
+        {
+          if(*this==other)return *this;
+          clear(root);
+          size=other.size;
+          other.size=0;
+          root=other.root;
+          other.root=nullptr;
+
+          return *this;
+            //(void)other;
+            //throw std::runtime_error("TODO");
+        }
+
+        bool isEmpty() const
+        {
+            return size==0?1:0;
+
+            //throw std::runtime_error("TODO");
+        }
+
+        mapped_type& operator[](const key_type& key)
+        {
+            auto f=find(key);
+            if(f!=end()) return f->second;
+            add({key,mapped_type{}});
+            return find(key)->second;
+
+
+            (void)key;
+            throw std::runtime_error("TODO");
+        }
+
+        const mapped_type& valueOf(const key_type& key) const
+        {
+          const_iterator it=find(key);
+          if (it==end()) throw std::out_of_range(" valueof nonexistant element");
+          return (*it).second;
+          //(void)key;
+            //throw std::runtime_error("TODO");
+        }
+        void clear(node* n){
+          if(n==nullptr) return;
+          clear(n->left_child);
+          clear(n->right_child);
+
+          delete n;
+
+        }
+        void add(const value_type & value){
+            node *helper = new node(value);
+            size+=1;
+            if(root==nullptr) root=helper;
+            else {
+                node *n=root;
+                while(n!=nullptr){
+                    if(value.first >n->data.first){
+                        if(n->right_child!=nullptr){
+                            n=n->right_child;
+                        }
+                        else {
+                            n->right_child=helper;
+                            helper->parent=n;
+                            return;
+                        }
+                    }
+                    else{
+                        if(n->left_child!=nullptr){
+                            n=n->left_child;
+                        }
+                        else{
+                            n->left_child=helper;
+                            helper->parent=n;
+                            return;
+                        }
+
+                    }
+                }
             }
-            else{
-              n->left_child=helper;
-              helper->parent=n;
+        }
+
+
+
+        mapped_type& valueOf(const key_type& key)
+        {
+            iterator it=find(key);
+            if (it==end()) throw std::out_of_range(" valueof nonexistant element");
+            return (*it).second;
+            //(void)key;
+            //throw std::runtime_error("TODO");
+        }
+
+        const_iterator find(const key_type& key) const
+        {
+            if(root == nullptr)
+                return cend();
+            node* helper= root;
+            while(helper!=nullptr){
+                if(helper->data.first==key) return const_iterator(root,helper);
+                else if (key >helper->data.first) helper=helper->right_child;
+                else helper=helper->left_child;
+            }
+            return cend();
+
+            //(void)key;
+            //throw std::runtime_error("TODO");
+        }
+
+        iterator find(const key_type& key)
+        {
+          if(root == nullptr)
+              return end();
+          node* helper= root;
+          while(helper!=nullptr){
+              if(helper->data.first==key) return iterator( const_iterator(root,helper));
+              else if (key >helper->data.first) helper=helper->right_child;
+              else helper=helper->left_child;
+          }
+          return end();
+
+            //(void)key;
+            //throw std::runtime_error("TODO");
+        }
+
+        void remove(const key_type& key)
+        {
+            auto it=find(key);
+            size-=1;
+            if (it==end()) throw std::out_of_range("removing nonexistant node");
+          //  unsigned int i=0;
+            node * dest=it.node_ptr;
+            if(dest->right_child==nullptr&&dest->left_child==nullptr){
+                delete dest;
+
+                return;
+            }else
+            if(dest->right_child!=nullptr&&dest->left_child==nullptr){
+              if(dest==root){
+                  root=dest->right_child;
+                  root->parent=nullptr;
+                  dest->right_child=nullptr;
+                  delete dest;
+                  return;
+              }
+              else dest->parent=dest->right_child;
+              dest->right_child=dest->parent;
+              delete dest;
+              return;
+            }else
+            if(dest->right_child==nullptr&&dest->left_child!=nullptr){
+              if(dest==root){
+                  root=dest->left_child;
+                  root->parent=nullptr;
+                  dest->left_child=nullptr;
+                  delete dest;
+                  return;
+              }
+              else dest->parent=dest->left_child;
+              dest->left_child=dest->parent;
+              delete dest;
               return;
             }
+//what to do here?
 
-          }
-      }
-    }
-  }
+            //(void)key;
+            //throw std::runtime_error("TODO");
+        }
 
+        void remove(const const_iterator& it)
+        {
+          remove(it->first);
+            //(void)it;
+            //throw std::runtime_error("TODO");
+        }
 
+        size_type getSize() const
+        {
+            return size;
+            //throw std::runtime_error("TODO");
+        }
 
-  mapped_type& valueOf(const key_type& key)
-  {
-    auto it=find(key);
-    if (it==end()) throw std::out_of_range(" valueof nonexistant element");
-    return (*it).second;
-    //(void)key;
-    //throw std::runtime_error("TODO");
-  }
-
-  const_iterator find(const key_type& key) const
-  {
-    if(root == nullptr)
-        return cend();
-    node* helper= root;
-    while(helper!=nullptr){
-      if(helper->data.first==key) return const_iterator(root,helper);
-      else if (key >helper->data.first) helper=helper->right_child;
-      else helper=helper->left_child;
-    }
-    return cend();
-
-    //(void)key;
-    //throw std::runtime_error("TODO");
-  }
-
-  iterator find(const key_type& key)
-  {
-    return Iterator(find(key));
-    //(void)key;
-    //throw std::runtime_error("TODO");
-  }
-
-  void remove(const key_type& key)
-  {
-    (void)key;
-    throw std::runtime_error("TODO");
-  }
-
-  void remove(const const_iterator& it)
-  {
-    (void)it;
-    throw std::runtime_error("TODO");
-  }
-
-  size_type getSize() const
-  {
-    return size;
-    //throw std::runtime_error("TODO");
-  }
-
-  bool operator==(const TreeMap& other) const
-  {
-    if(size != other.size) return 0;
-    auto ot=other.begin();
-    for(auto it=begin();it!=end();it++,ot++){
-      if(it!=ot) return 0;
-
-    }
-    return 1;
-    //(void)other;
-    //throw std::runtime_error("TODO");
-  }
-
-  bool operator!=(const TreeMap& other) const
-  {
-    return !(*this == other);
-  }
-
-  iterator begin()
-  {
-    return iterator(cbegin());
-    //throw std::runtime_error("TODO");
-  }
-
-  iterator end()
-  {
-      return iterator(cend());
-    //throw std::runtime_error("TODO");
-  }
-
-  const_iterator cbegin() const
-  {
-    if(size==0) return cend();
-    node *p=root;
-    while(p->left_child != nullptr ){
-      p=p->left_child;
-    }
-    return const_iterator(root,p);
-  //  throw std::runtime_error("TODO");
-  }
-
-  const_iterator cend() const
-  {
-    return const_iterator(root,nullptr);
-    //throw std::runtime_error("TODO");
-  }
-
-  const_iterator begin() const
-  {
-    return cbegin();
-  }
-
-  const_iterator end() const
-  {
-    return cend();
-  }
-};
-
-template <typename KeyType, typename ValueType>
-class TreeMap<KeyType, ValueType>::ConstIterator
-{
-public:
-  using reference = typename TreeMap::const_reference;
-  using iterator_category = std::bidirectional_iterator_tag;
-  using value_type = typename TreeMap::value_type;
-  using pointer = const typename TreeMap::value_type*;
-private:
-  node * root_ptr;
-  node* node_ptr;
-
-public:
-
-  explicit ConstIterator(node *r,node *n):root_ptr(r),node_ptr(n)
-  {}
-
-  ConstIterator(const ConstIterator& other)
-  {
-    node_ptr=other.node_ptr;
-    root_ptr=other.root_ptr;
-    //(void)other;
-    //throw std::runtime_error("TODO");
-  }
-
-  ConstIterator& operator++()
-  {
-    if (node_ptr==nullptr){
-      throw std:: out_of_range("nullptr");
-    }
-    if(node_ptr->right_child!=nullptr){
-      node_ptr=node_ptr->right_child;
-      while(node_ptr->left_child!=nullptr){
-        node_ptr=node_ptr->left_child;
-        return *this;
-      }
-    }
-
-  node*  p=node_ptr->parent;
-    while (p != nullptr && node_ptr == p->right_child){//  --pot_err_1--
-      node_ptr=p;
-      p=p->parent;
-    }
-    node_ptr=p;
-    return *this;
+        bool operator==(const TreeMap& other) const
+        {
+            if(size != other.size) return 0;
+            auto ot=other.begin();
+            for(auto it=begin();it!=end();it++,ot++){
+                if(*it!=*ot) return 0;
 
 
-    //throw std::runtime_error("TODO");
-  }
+            }
+            return 1;
+            //(void)other;
+            //throw std::runtime_error("TODO");
+        }
 
-  ConstIterator operator++(int)
-  {
-    auto ret=this;
-    ++(*this);//is this legal?                                --pot_err_1--
-    return *ret;
-  //  throw std::runtime_error("TODO");
-  }
+        bool operator!=(const TreeMap& other) const
+        {
+            return !(*this == other);
+        }
 
-  ConstIterator& operator--()
-  {
-    if(root_ptr==nullptr) throw std::out_of_range("nonexistant tree");
-    if(node_ptr==nullptr){
+        iterator begin()
+        {
+            return iterator(cbegin());
+            //throw std::runtime_error("TODO");
+        }
 
-      while(node_ptr->right_child!=nullptr){
-        node_ptr=node_ptr->right_child;
-      }
-      return *this;
-    }
-     if(node_ptr->left_child!=nullptr){
-      node_ptr=node_ptr->left_child;
-      while(node_ptr->right_child!=nullptr){
-        node_ptr=node_ptr->right_child;
-        return *this;
-      }
-    }
-    node*  p=node_ptr->parent;
-      while (p != nullptr && node_ptr == p->left_child){//  --pot_err_1--
-        node_ptr=p;
-        p=p->parent;
-      }
-      node_ptr=p;
-      if(node_ptr==nullptr) throw std::out_of_range("decrementring begin iteratro");
-      return *this;
-    //throw std::runtime_error("TODO");
-  }
+        iterator end()
+        {
+            return iterator(cend());
+            //throw std::runtime_error("TODO");
+        }
 
-  ConstIterator operator--(int)
-  {
-    auto ret=this;
-    --(*this);//is this legal?
-  //  operator--();                          --pot_err_1--
-    return *ret;
-  //  throw std::runtime_error("TODO");
-  }
+        const_iterator cbegin() const
+        {
+            if(size==0) return cend();
+            node *p=root;
+            while(p->left_child != nullptr ){
+                p=p->left_child;
+            }
+            return const_iterator(root,p);
+            //  throw std::runtime_error("TODO");
+        }
 
-  reference operator*() const
-  {
-    if (node_ptr== nullptr)    throw std::out_of_range("location empty");
-     return node_ptr->data;
+        const_iterator cend() const
+        {
+            return const_iterator(root,nullptr);
+            //throw std::runtime_error("TODO");
+        }
 
-    //throw std::runtime_error("TODO");
-  }
+        const_iterator begin() const
+        {
+            return cbegin();
+        }
 
-  pointer operator->() const
-  {
-    return &this->operator*();
-  }
+        const_iterator end() const
+        {
+            return cend();
+        }
+    };
 
-  bool operator==(const ConstIterator& other) const
-  {
-    return node_ptr==other.node_ptr ?1:0;
-  //  (void)other;
-  //  throw std::runtime_error("TODO");
-  }
+    template <typename KeyType, typename ValueType>
+    class TreeMap<KeyType, ValueType>::ConstIterator
+    {
+    public:
+        using reference = typename TreeMap::const_reference;
+        using iterator_category = std::bidirectional_iterator_tag;
+        using value_type = typename TreeMap::value_type;
+        using pointer = const typename TreeMap::value_type*;
+        friend class TreeMap;
 
-  bool operator!=(const ConstIterator& other) const
-  {
-    return !(*this == other);
-  }
-};
+    private:
+        node * root_ptr;
+        node* node_ptr;
 
-template <typename KeyType, typename ValueType>
-class TreeMap<KeyType, ValueType>::Iterator : public TreeMap<KeyType, ValueType>::ConstIterator
-{
-public:
-  using reference = typename TreeMap::reference;
-  using pointer = typename TreeMap::value_type*;
+    public:
 
-  explicit Iterator()
-  {}
+        explicit ConstIterator(node *r,node *n):root_ptr(r),node_ptr(n)
+        {}
 
-  Iterator(const ConstIterator& other)
-    : ConstIterator(other)
-  {}
+        ConstIterator(const ConstIterator& other)
+        {
+            node_ptr=other.node_ptr;
+            root_ptr=other.root_ptr;
+            //(void)other;
+            //throw std::runtime_error("TODO");
+        }
 
-  Iterator& operator++()
-  {
-    ConstIterator::operator++();
-    return *this;
-  }
+        ConstIterator& operator++()
+        {
+            if (node_ptr==nullptr){
+                throw std:: out_of_range("nullptr");
+            }
+            if(node_ptr->right_child!=nullptr){
+                node_ptr=node_ptr->right_child;
+                while(node_ptr->left_child!=nullptr){
+                    node_ptr=node_ptr->left_child;
+                    return *this;
+                }
+            }
 
-  Iterator operator++(int)
-  {
-    auto result = *this;
-    ConstIterator::operator++();
-    return result;
-  }
+            node*  p=node_ptr->parent;
+            while (p != nullptr && node_ptr == p->right_child){//  --pot_err_1--
+                node_ptr=p;
+                p=p->parent;
+            }
+            node_ptr=p;
+            return *this;
 
-  Iterator& operator--()
-  {
-    ConstIterator::operator--();
-    return *this;
-  }
 
-  Iterator operator--(int)
-  {
-    auto result = *this;
-    ConstIterator::operator--();
-    return result;
-  }
+            //throw std::runtime_error("TODO");
+        }
 
-  pointer operator->() const
-  {
-    return &this->operator*();
-  }
+        ConstIterator operator++(int)
+        {
+            auto ret=this;
+            ++(*this);//is this legal?                                --pot_err_1--
+            return *ret;
+            //  throw std::runtime_error("TODO");
+        }
 
-  reference operator*() const
-  {
-    // ugly cast, yet reduces code duplication.
-    return const_cast<reference>(ConstIterator::operator*());
-  }
-};
+        ConstIterator& operator--()
+        {
+            if(root_ptr==nullptr) throw std::out_of_range("nonexistant tree");
+            if(node_ptr==nullptr){
+              node_ptr=root_ptr;
+                while(node_ptr->right_child!=nullptr){
+                    node_ptr=node_ptr->right_child;
+                }
+                return *this;
+            }
+            if(node_ptr->left_child!=nullptr){
+                node_ptr=node_ptr->left_child;
+                while(node_ptr->right_child!=nullptr){
+                    node_ptr=node_ptr->right_child;
+                    return *this;
+                }
+            }
+            node*  p=node_ptr->parent;
+            while (p != nullptr && node_ptr == p->left_child){//  --pot_err_1--
+                node_ptr=p;
+                p=p->parent;
+            }
+            node_ptr=p;
+            if(node_ptr==nullptr) throw std::out_of_range("decrementring begin iteratro");
+            return *this;
+            //throw std::runtime_error("TODO");
+        }
+
+        ConstIterator operator--(int)
+        {
+            auto ret=this;
+            --(*this);//is this legal?
+            //  operator--();                          --pot_err_1--
+            return *ret;
+            //  throw std::runtime_error("TODO");
+        }
+
+        reference operator*() const
+        {
+            if (node_ptr== nullptr)    throw std::out_of_range("location empty");
+            return node_ptr->data;
+
+            //throw std::runtime_error("TODO");
+        }
+
+        pointer operator->() const
+        {
+            return &this->operator*();
+        }
+
+        bool operator==(const ConstIterator& other) const
+        {
+            return node_ptr==other.node_ptr ?1:0;
+            //  (void)other;
+            //  throw std::runtime_error("TODO");
+        }
+
+        bool operator!=(const ConstIterator& other) const
+        {
+            return !(*this == other);
+        }
+    };
+
+    template <typename KeyType, typename ValueType>
+    class TreeMap<KeyType, ValueType>::Iterator : public TreeMap<KeyType, ValueType>::ConstIterator
+    {
+    public:
+        using reference = typename TreeMap::reference;
+        using pointer = typename TreeMap::value_type*;
+
+        explicit Iterator()
+        {}
+
+        Iterator(const ConstIterator& other)
+                : ConstIterator(other)
+        {}
+
+        Iterator& operator++()
+        {
+            ConstIterator::operator++();
+            return *this;
+        }
+
+        Iterator operator++(int)
+        {
+            auto result = *this;
+            ConstIterator::operator++();
+            return result;
+        }
+
+        Iterator& operator--()
+        {
+            ConstIterator::operator--();
+            return *this;
+        }
+
+        Iterator operator--(int)
+        {
+            auto result = *this;
+            ConstIterator::operator--();
+            return result;
+        }
+
+        pointer operator->() const
+        {
+            return &this->operator*();
+        }
+
+        reference operator*() const
+        {
+            // ugly cast, yet reduces code duplication.
+            return const_cast<reference>(ConstIterator::operator*());
+        }
+    };
 
 }
 
