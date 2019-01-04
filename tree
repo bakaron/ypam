@@ -48,24 +48,33 @@ namespace aisdi
             size=0;
         }
 
-        TreeMap(std::initializer_list<value_type> list)
+        TreeMap(std::initializer_list<value_type> list) : TreeMap()
         {
             for(auto l=list.begin();l!= list.end();l++){
-                  add(*l);
+                 add(*l);
+                  //size+=1;
             }
+            // for(auto elem : list)
+            // {
+            //   add(elem);
+            //   size+=1;
+            // }
+
 
             //(void)list; // disables "unused argument" warning, can be removed when method is implemented.
             //throw std::runtime_error("TODO");
         }
 
-        TreeMap(const TreeMap& other)
+        TreeMap(const TreeMap& other) : TreeMap()
         {
             //*this = other;
-            if(*this==other)return;
-              clear(root);
-            for(auto it=other.begin();it!= other.end();++it){
-              add(*it);
-            }
+            // if(*this==other)return;
+            //   clear(root);
+            // for(auto it=other.begin();it!= other.end();++it){
+            //   add(*it);
+            // }
+            for(auto elem : other)
+              add(elem);
             //(void)other;
             //throw std::runtime_error("TODO");
         }
@@ -75,7 +84,7 @@ namespace aisdi
 
             if(*this==other)return;
             size=other.size;
-            other.size=0;
+
             root=other.root;
             other.root=nullptr;
             //(void)other;
@@ -86,10 +95,11 @@ namespace aisdi
         {
           if(*this==other)return *this;
             clear(root);
+
           for(auto it=other.begin();it!= other.end();++it){
             add(*it);
           }
-        //  size=other.size;
+
           return *this;
 
             //(void)other;
@@ -100,6 +110,7 @@ namespace aisdi
         {
           if(*this==other)return *this;
           clear(root);
+
           size=other.size;
           other.size=0;
           root=other.root;
@@ -141,13 +152,14 @@ namespace aisdi
           if(n==nullptr) return;
           clear(n->left_child);
           clear(n->right_child);
-
+          size-=1;
           delete n;
 
         }
-        void add(const value_type & value){
+        void add(const value_type & value)
+        {
+          size+=1;
             node *helper = new node(value);
-            size+=1;
             if(root==nullptr) root=helper;
             else {
                 node *n=root;
@@ -280,9 +292,10 @@ namespace aisdi
         bool operator==(const TreeMap& other) const
         {
             if(size != other.size) return 0;
-            auto ot=other.begin();
-            for(auto it=begin();it!=end();it++,ot++){
-                if(*it!=*ot) return 0;
+          //  auto ot=other.begin();
+            for(auto it=other.begin();it!=other.end();it++){
+              //  if(*it!=*ot) return 0;
+              if(find(it->first)==end() || find(it->first)->second!=it->second)return 0;
 
 
             }
@@ -372,8 +385,9 @@ namespace aisdi
                 node_ptr=node_ptr->right_child;
                 while(node_ptr->left_child!=nullptr){
                     node_ptr=node_ptr->left_child;
-                    return *this;
+
                 }
+                  return *this;
             }
 
             node*  p=node_ptr->parent;
