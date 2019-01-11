@@ -1,0 +1,442 @@
+#ifndef AISDI_MAPS_HASHMAP_H
+#define AISDI_MAPS_HASHMAP_H
+
+#include <array>
+#include <cstddef>
+#include <functional>
+#include <initializer_list>
+#include <list>
+#include <stdexcept>
+#include <utility>
+#define arr_size 10000
+namespace aisdi {
+
+template <typename KeyType, typename ValueType> class HashMap {
+public:
+  using key_type = KeyType;
+  using mapped_type = ValueType;
+  using value_type = std::pair<const key_type, mapped_type>;
+  using size_type = std::size_t;
+  using reference = value_type &;
+  using const_reference = const value_type &;
+
+  class ConstIterator;
+  class Iterator;
+  using iterator = Iterator;
+  using const_iterator = ConstIterator;
+  friend class ConstIterator;
+
+private:
+  std::array<std::list<value_type>, arr_size> hash_table;
+  size_type size; // can be greater than arr_size
+
+public:
+  HashMap() : hash_table(), size(0) {}
+  HashMap(std::initializer_list<value_type> list) : HashMap() {
+    for (auto it = list.begin(); it != list.end(); ++it) {
+      // auto it = list.begin();
+      add_elem(*it);
+
+      //  (*this)[it->first] = it->second;
+    }
+    //  (void)list; // disables "unused argument" warning, can be removed when
+    // method is implemented.
+    // throw std::runtime_error("TODO");
+  }
+
+  HashMap(const HashMap &other) : HashMap() {
+    if (other == *this)
+      return;
+    // size = other.size;
+
+    for (auto it = other.begin(); it != other.end(); ++it) {
+      add_elem(*it);
+    }
+
+    // (void)other;
+    // throw std::runtime_error("TODO");
+  }
+
+  HashMap(HashMap &&other) : HashMap() {
+    if (other == *this)
+      return;
+
+    //
+    // for (auto it = other.begin(); it != other.end(); ++it) {
+    //   add_elem(*it);
+    // }
+    size=other.size;
+    hash_table = std ::move(other.hash_table);
+    other.size = 0;
+    //
+    // swap(*this, other);
+    // other.clear();
+    // other.size = 0;
+
+    // (void)other;
+    // throw std::runtime_error("TODO");
+  }
+
+  HashMap &operator=(const HashMap &other) {
+    if (other == *this)
+      return *this;
+    clear();
+
+    for (auto it = other.begin(); it != other.end(); ++it) {
+      add_elem(*it);
+    }
+    return *this;
+
+    // (void)other;
+    // throw std::runtime_error("TODO");
+  }
+
+  HashMap &operator=(HashMap &&other) {
+    if (other == *this) {
+      return *this;
+    }
+
+    // clear();
+    // for (auto it = other.begin(); it != other.end(); ++it) {
+    //   add_elem(*it);
+    // }
+    clear();
+
+    size = std ::move(other.size);
+
+    hash_table = std ::move(other.hash_table);
+    other.size = 0;
+    // other.clear();
+    return *this;
+
+    // (void)other;
+    // throw std::runtime_error("TODO");
+  }
+
+  size_type hash_func(const key_type &key) const {
+    return (std::hash<key_type>{}(key)) % arr_size;
+  }
+
+  void add_elem(value_type val) {
+    size += 1;
+
+    // hash_table[hash_func(val.first)].push_back(val);
+    hash_table[hash_func(val.first)].emplace_back(val);
+    begin();
+  }
+
+  void clear() {
+    // for (auto it = begin(); it != end(); ++it) {
+    //   hash_table[it.index].clear();
+    // }
+    while (begin() != end()) {
+      remove(begin());
+    }
+    size = 0;
+  }
+
+  bool isEmpty() const {
+    return size == 0 ? 1 : 0;
+    //  throw std::runtime_error("TODO");
+  }
+
+  mapped_type &operator[](const key_type &key) {
+    auto f = find(key);
+    if (f != end())
+      return f->second;
+    add_elem({key, mapped_type{}});
+    return find(key)->second;
+
+    //   (void)key;
+    //  throw std::runtime_error("TODO");
+  }
+
+  const mapped_type &valueOf(const key_type &key) const {
+    const_iterator it = find(key);
+    if (it == end())
+      throw std::out_of_range(" valueof nonexistant element");
+    return (*it).second;
+
+    // (void)key;
+    // throw std::runtime_error("TODO");
+  }
+
+  mapped_type &valueOf(const key_type &key) {
+
+    iterator it = find(key);
+    if (it == end())
+      throw std::out_of_range(" valueof nonexistant element");
+    return (*it).second;
+    //(void)key;
+    // throw std::runtime_error("TODO");
+  }
+
+  const_iterator find(const key_type &key) const {
+    size_type f = hash_func(key);
+
+    if (hash_table[f].cbegin() == hash_table[f].cend()) {
+      // throw std::out_of_range("element does not exist");
+      return cend();
+    }
+    return const_iterator(this, f, hash_table[f].cbegin());
+
+    // (void)key;
+    // throw std::runtime_error("TODO");
+  }
+
+  iterator find(const key_type &key) {
+    size_type f = hash_func(key);
+
+    if (hash_table[f].begin() == hash_table[f].end()) {
+      // throw std::out_of_range("element does not exist");
+      return end();
+    }
+    return iterator(const_iterator(this, f, hash_table[f].cbegin()));
+
+    //  (void)key;
+    // throw std::runtime_error("TODO");
+  }
+
+  void remove(const key_type &key) {
+    auto it = find(key);
+    if (it == end())
+      throw std ::out_of_range("removing from end ");
+    size -= 1;
+    hash_table[it.index].pop_front();
+    begin();
+    // (void)key;
+    // throw std::runtime_error("TODO");
+  }
+
+  void remove(const const_iterator &it) {
+
+    if (it == end())
+      throw std ::out_of_range("removing from end ");
+    size -= 1;
+    hash_table[it.index].pop_front();
+    begin();
+    // (void)it;
+    // throw std::runtime_error("TODO");
+  }
+
+  size_type getSize() const {
+    return size;
+    //  throw std::runtime_error("TODO");
+  }
+
+  bool operator==(const HashMap &other) const {
+    if (size != other.size)
+      return 0;
+    for (auto it = other.begin(); it != other.end(); ++it) {
+      if (find(it->first) == end() || find(it->first)->second != it->second)
+        return 0;
+    }
+    return 1;
+    // (void)other;
+    // throw std::runtime_error("TODO");
+  }
+
+  bool operator!=(const HashMap &other) const { return !(*this == other); }
+
+  iterator begin() {
+    return iterator(cbegin());
+    // throw std::runtime_error("TODO");
+  }
+
+  iterator end() {
+    return iterator(cend());
+    // throw std::runtime_error("TODO");
+  }
+
+  const_iterator cbegin() const {
+    if (size == 0)
+      return cend();
+    size_type i = 0;
+    while (i != arr_size && hash_table[i].begin() == hash_table[i].end()) {
+      ++i;
+    }
+    return ConstIterator(this, i, hash_table[i].begin());
+    // return
+    //  throw std::runtime_error("TODO");
+  }
+
+  const_iterator cend() const {
+    return ConstIterator(this, arr_size - 1, hash_table[arr_size - 1].end());
+    // throw std::runtime_error("TODO");
+  }
+
+  const_iterator begin() const { return cbegin(); }
+
+  const_iterator end() const { return cend(); }
+};
+
+template <typename KeyType, typename ValueType>
+class HashMap<KeyType, ValueType>::ConstIterator {
+public:
+  using reference = typename HashMap::const_reference;
+  using iterator_category = std::bidirectional_iterator_tag;
+  using value_type = typename HashMap::value_type;
+  using pointer = const typename HashMap::value_type *;
+  using list_iterator = typename std::list<value_type>::const_iterator;
+  friend class HashMap;
+
+private:
+  const HashMap *map_ptr;
+  size_type index;
+  list_iterator list_iter;
+
+public:
+  explicit ConstIterator(const HashMap *p, size_t i, list_iterator l)
+      : map_ptr(p), index(i), list_iter(l) {}
+
+  ConstIterator(const ConstIterator &other) {
+    map_ptr = other.map_ptr;
+    list_iter = other.list_iter;
+    index = other.index;
+    //(void)other;
+    // throw std::runtime_error("TODO");
+  }
+
+  ConstIterator &operator++() {
+
+    if (*this == map_ptr->end())
+      throw std::out_of_range("Incrementing end().");
+    ++list_iter;
+    while (list_iter == map_ptr->hash_table[index].end()) {
+      ++index;
+      if (index == arr_size) {
+        *this = map_ptr->end();
+        return *this;
+      }
+      list_iter = map_ptr->hash_table[index].begin();
+    }
+    return *this;
+
+    // if (*this == map_ptr->end()) {
+    //   throw std::out_of_range("accessing end/nullptr");
+    //   // return *this;
+    // }
+    // ++list_iter;
+    // if (list_iter == map_ptr->hash_table[index].end()) {
+    //   while (index != map_ptr->arr_size && map_ptr->hash_table[index].begin()
+    //   ==
+    //                                          map_ptr->hash_table[index].end())
+    //                                          {
+    //     ++index;
+    //   }
+    //   if (index == map_ptr->arr_size) {
+    //
+    //     *this = map_ptr->end();
+    //     return *this;
+    //   } else
+    //     list_iter = map_ptr->hash_table[index].begin();
+    //   return *this;
+    // }
+    // return *this;
+    // throw std::runtime_error("TODO");
+  }
+
+  ConstIterator operator++(int) {
+    auto ret = *this;
+    operator++();
+    return ret;
+
+    //  throw std::runtime_error("TODO");
+  }
+
+  ConstIterator &operator--() {
+    if (*this == map_ptr->begin()) {
+      throw std::out_of_range("decrementing begin()");
+    }
+    if (list_iter == map_ptr->hash_table[index].begin()) {
+      while (index >= 0 && map_ptr->hash_table[index].begin() ==
+                               map_ptr->hash_table[index].end()) {
+        --index;
+      }
+      if (index < 0) {
+        *this = map_ptr->cend();
+        return *this;
+      }
+      list_iter = map_ptr->hash_table[index].begin();
+      return *this;
+    }
+    --list_iter;
+    return *this;
+    // throw std::runtime_error("TODO");
+  }
+
+  ConstIterator operator--(int) {
+    auto ret = *this;
+    operator++();
+    return ret;
+    // throw std::runtime_error("TODO");
+  }
+
+  reference operator*() const {
+    if (*this == map_ptr->end())
+      throw std::out_of_range("accessing end/nullptr");
+    return *list_iter;
+    // throw std::runtime_error("TODO");
+  }
+
+  pointer operator->() const { return &this->operator*(); }
+
+  bool operator==(const ConstIterator &other) const {
+    if (map_ptr == other.map_ptr && index == other.index &&
+        list_iter == other.list_iter) {
+      return 1;
+    }
+    return 0;
+    //(void)other;
+    // throw std::runtime_error("TODO");
+  }
+
+  bool operator!=(const ConstIterator &other) const {
+    return !(*this == other);
+  }
+};
+
+template <typename KeyType, typename ValueType>
+class HashMap<KeyType, ValueType>::Iterator
+    : public HashMap<KeyType, ValueType>::ConstIterator {
+public:
+  using reference = typename HashMap::reference;
+  using pointer = typename HashMap::value_type *;
+
+  explicit Iterator() {}
+
+  Iterator(const ConstIterator &other) : ConstIterator(other) {}
+
+  Iterator &operator++() {
+    ConstIterator::operator++();
+    return *this;
+  }
+
+  Iterator operator++(int) {
+    auto result = *this;
+    ConstIterator::operator++();
+    return result;
+  }
+
+  Iterator &operator--() {
+    ConstIterator::operator--();
+    return *this;
+  }
+
+  Iterator operator--(int) {
+    auto result = *this;
+    ConstIterator::operator--();
+    return result;
+  }
+
+  pointer operator->() const { return &this->operator*(); }
+
+  reference operator*() const {
+    // ugly cast, yet reduces code duplication.
+    return const_cast<reference>(ConstIterator::operator*());
+  }
+};
+
+} // namespace aisdi
+
+#endif /* AISDI_MAPS_HASHMAP_H */
