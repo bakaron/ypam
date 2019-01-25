@@ -1,0 +1,113 @@
+#ifndef MOST_H
+#define MOST_H
+
+#include<vector>
+#include <stack>
+struct edge{//krawędź przechowuje informacje o obu swoich wierchołkach a,b
+    unsigned int a;
+    unsigned int b;
+    edge(int a,int b):a(a),b(b)
+    {}
+};
+class bridge_graph{
+
+private:
+   unsigned int number_of_vertices=0;
+    std ::vector<std::vector<unsigned int>> matrix;// macierz sąsiedztwa
+    std ::vector<struct edge> edges;
+
+
+
+public:
+
+    bridge_graph(unsigned int size){
+        number_of_vertices = size;
+        matrix.reserve(size);
+
+    }
+
+    void  add_edge(unsigned int a,unsigned int b){
+        struct edge e(a,b);
+        edges.push_back(e);
+    }
+  void  print_edges(){
+      //std::  cout<<"vertex number: "<<number_of_vertices;
+      for(auto it=edges.begin();it!= edges.end();++it) {
+          std::cout << it->a << " - " << it->b<<"\n" ;
+      }
+    }
+    void get_size(){
+       std:: cout<<number_of_vertices<<"\n";
+    }
+
+   void build_matrix(){
+        for(auto it = edges.begin(); it!= edges.end() ; ++it){
+            matrix[it->a].push_back(it ->b) ;
+            matrix[it->b].push_back(it ->a) ;
+        }
+    }
+    void print_matrix(){
+        for(int i=0;i<number_of_vertices;++i){
+            std::cout<<i<<": ";
+            for(auto it=matrix[i].begin();it!=matrix[i].end();++it){
+                std::cout<<*it;
+            }
+            std::cout<<"\n";
+        }
+    }
+    void is_bridge() {
+        unsigned int count;
+        std::vector<bool> visited;
+        std::stack<unsigned int> stack;
+        visited.reserve(number_of_vertices);
+        for (unsigned int i = 0; i < edges.size(); ++i) {
+
+            for (int i = 0; i < number_of_vertices; ++i) {
+                visited[i]=0;
+            }
+
+            if (number_of_vertices == 2) {
+                std::cout << "only 1 edge \n";
+            }
+            count = 0;
+            visited[edges[i].a] = 1;
+            visited[edges[i].b] = 1;
+            unsigned int h = 0;
+
+
+            for (h = 0; h < number_of_vertices; ++h) {
+                if (visited[h] != 1) break;
+            }
+
+
+            stack.push(h);
+            visited[h] = 1;
+
+            while (!stack.empty()) {
+                h = stack.top();
+                stack.pop();
+                ++count;
+                for (auto it = matrix[h].begin(); it != matrix[h].end(); ++it) {
+                    if (visited[*it] == 0) {
+                        visited[*it] = 1;
+                        stack.push(*it);
+                    }
+                }
+            }
+touc
+            if (count != number_of_vertices-2) {
+                 std:: cout<<"bridge :"<<edges[i].a<<" - "<<edges[i].b<<"\n";
+                //std::cout << "bridge";
+            }
+        }
+    }
+
+
+};
+
+
+
+
+
+
+#endif
